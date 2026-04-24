@@ -180,7 +180,7 @@ export default function Home() {
         <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(88, 166, 255, 0.05)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Need a key?</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-            Generate a free API key instantly (limit 3 per hour).
+            Generate a free API key instantly (Limit: 2 keys per person).
           </p>
           
           {!generatedKey ? (

@@ -2,16 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
-const keyGenRateLimit = new Map<string, { count: number; resetAt: number }>();
-
-function cleanupExpired() {
-  if (keyGenRateLimit.size < 100) return;
-  const now = Date.now();
-  for (const [ip, data] of keyGenRateLimit.entries()) {
-    if (now > data.resetAt) keyGenRateLimit.delete(ip);
-  }
-}
-
 export async function GET() {
   return NextResponse.json({ message: 'Use POST to generate a key' });
 }
@@ -23,42 +13,42 @@ export async function POST(req: NextRequest) {
 
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = forwarded?.split(',')[0]?.trim() || (req as any).ip || '127.0.0.1';
-  const now = Date.now();
-
-  cleanupExpired();
-
-  const limit = keyGenRateLimit.get(ip);
-  if (limit && now < limit.resetAt) {
-    if (limit.count >= 3) {
-      console.log(`[Rate Limit] KeyGen - IP: ${ip}`);
-      return NextResponse.json({ error: 'Key generation limit reached' }, { status: 429 });
-    }
-
-    keyGenRateLimit.set(ip, {
-      count: limit.count + 1,
-      resetAt: limit.resetAt
-    });
-  } else {
-    keyGenRateLimit.set(ip, { count: 1, resetAt: now + 3600000 });
-  }
 
   try {
+    // 1. Check if this IP has already reached the limit (2 keys ever)
+    const { count, error: countError } = await supabaseAdmin
+      .from('api_keys')
+      .select('*', { count: 'exact', head: true })
+      .eq('created_by_ip', ip);
+
+    if (countError) {
+      console.error(`[Error] KeyGen - Count Check Failed:`, countError.message);
+    } else if (count !== null && count >= 2) {
+      console.log(`[Rate Limit] KeyGen - IP: ${ip} (Hard Limit Reached)`);
+      return NextResponse.json({ 
+        error: 'Hard limit reached. Only 2 API keys allowed per person.' 
+      }, { status: 429 });
+    }
+
+    // 2. Generate raw key
     const rawKey = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(rawKey).digest('hex');
 
-    const { error } = await supabaseAdmin
+    // 3. Store in Supabase with the creating IP
+    const { error: insertError } = await supabaseAdmin
       .from('api_keys')
       .insert([
         {
           key_hash: hash,
           plan: 'free',
           requests_used: 0,
-          requests_limit: 100
+          requests_limit: 100,
+          created_by_ip: ip
         }
       ]);
 
-    if (error) {
-      console.error(`[Error] KeyGen - DB Insert Failed:`, error.message);
+    if (insertError) {
+      console.error(`[Error] KeyGen - DB Insert Failed:`, insertError.message);
       return NextResponse.json({ error: 'Failed to generate API key' }, { status: 500 });
     }
 
