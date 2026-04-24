@@ -1,5 +1,5 @@
 # fixjson API
-> A high-performance, deterministic engine for repairing malformed JSON structures without unpredictable LLM hallucinations.
+> A fast, deterministic API for repairing malformed JSON with predictable, production-safe output.
 
 A lightweight API to repair malformed JSON and return clean, normalized output.
 
@@ -14,6 +14,12 @@ https://fixjson-api.vercel.app
 - Normalized JSON output
 - API key authentication
 - Rate limiting (free tier)
+
+## Use Cases
+
+- Cleaning malformed logs before ingestion
+- Fixing JSON from unreliable external APIs
+- Preprocessing data before storage or pipelines
 
 ## Quick Start
 
@@ -80,7 +86,7 @@ curl -X POST https://fixjson-api.vercel.app/api/v1/fixjson \
 }
 ```
 
-**Failure Response (Limits/Auth):**
+**Error Response (Auth / Rate Limit):**
 ```json
 {
   "error": "Free tier limit exceeded. Upgrade coming soon.",
