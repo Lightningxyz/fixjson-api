@@ -1,99 +1,119 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 export default function Home() {
+  const [input, setInput] = useState('');
+  const [output, setOutput] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFix = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setError(null);
+    setOutput(null);
+
+    try {
+      const response = await fetch(`/api/v1/demo-fixjson?json=${encodeURIComponent(input)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to fix JSON');
+      } else {
+        setOutput(data);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (output?.repaired_json) {
+      navigator.clipboard.writeText(JSON.stringify(output.repaired_json, null, 2));
+      alert('JSON copied to clipboard!');
+    }
+  };
+
   return (
     <main className="container">
       <header className="header">
-        <span className="badge">v1.0 API Live</span>
-        <h1 className="title">fixjson API</h1>
-        <p className="subtitle">Automatically fix and reconstruct malformed JSON objects.</p>
+        <span className="badge">v1.0 Demo</span>
+        <h1 className="title">Fix Broken JSON Instantly</h1>
+        <p className="subtitle">Deterministic JSON repair (no AI)</p>
       </header>
 
       <section className="card">
-        <h2>Overview</h2>
-        <p>
-          Send us your broken JSON (trailing commas, missing quotes, single quotes), and we'll return a valid JSON object. 
-          The API is entirely deterministic and does not use LLMs, ensuring lightning-fast and predictable results.
-        </p>
-        <p style={{ marginTop: '1rem' }}>
-          <strong>Base URL:</strong> <code>https://fixjson-api.vercel.app</code>
-        </p>
-      </section>
+        <textarea
+          className="textarea"
+          placeholder="{ name: 'John', age: 30, }"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          spellCheck={false}
+        />
+        
+        {error && <div className="error-text">{error}</div>}
 
-      <section className="card">
-        <h2>Authentication</h2>
-        <p>
-          Requests must include an <code>x-api-key</code> header. Usage is tracked and rate-limited.
-        </p>
-        <pre className="code-block">
-          <code>
-<span className="code-comment"># Try it (copy & run)</span><br/>
-curl -X POST https://fixjson-api.vercel.app/api/v1/fixjson \<br/>
-  -H <span className="code-string">"Content-Type: application/json"</span> \<br/>
-  -H <span className="code-string">"x-api-key: your_api_key_here"</span> \<br/>
-  -d <span className="code-string">'&#123;"json": "&#123; name: \"John\", age: 30, &#125;"&#125;'</span>
-          </code>
-        </pre>
-      </section>
+        <button 
+          className="button"
+          onClick={handleFix}
+          disabled={loading || !input.trim()}
+        >
+          {loading ? 'Fixing...' : 'Fix JSON'}
+        </button>
 
-      <section className="card">
-        <h2>Pricing</h2>
-        <div className="flex-row">
-          <div className="flex-col">
-            <h3 style={{ color: 'var(--accent)' }}>Free Plan</h3>
-            <ul style={{ listStylePosition: 'inside', color: 'var(--text-secondary)' }}>
-              <li>Limited requests per API key</li>
-              <li>Deterministic JSON repair</li>
-              <li>Syntax diagnostics</li>
-            </ul>
+        {output && (
+          <div style={{ marginTop: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>Repaired Output</h2>
+              <button className="copy-button" onClick={copyToClipboard}>Copy JSON</button>
+            </div>
+            
+            <pre className="code-block" style={{ maxHeight: '400px' }}>
+              <code>{JSON.stringify(output.repaired_json, null, 2)}</code>
+            </pre>
+
+            {output.changes.length > 0 && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem' }}>Changes Applied</h3>
+                <ul style={{ listStyleType: 'disc' }}>
+                  {output.changes.map((change: string, i: number) => (
+                    <li key={i} className="list-item">{change}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {output.errors.length > 0 && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem', color: '#ff7b72' }}>Diagnostics</h3>
+                <ul style={{ listStyleType: 'circle' }}>
+                  {output.errors.map((err: string, i: number) => (
+                    <li key={i} className="list-item" style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                      {err}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          <div className="flex-col">
-            <h3 style={{ color: '#8b949e' }}>Pro Plan (Coming Soon)</h3>
-            <ul style={{ listStylePosition: 'inside', color: 'var(--text-secondary)' }}>
-              <li>Higher usage limits</li>
-              <li>Priority processing</li>
-            </ul>
-          </div>
-        </div>
+        )}
       </section>
 
-      <div className="flex-row">
-        <section className="card flex-col">
-          <h2>Request Format</h2>
-          <p>Send a POST request with the following structure:</p>
-          <pre className="code-block">
-            <code>
-&#123;<br/>
-  <span className="code-key">"json"</span>: <span className="code-string">"&#123; unquoted_key: 'value', &#125;"</span><br/>
-&#125;
-            </code>
-          </pre>
-        </section>
-
-        <section className="card flex-col">
-          <h2>Response Format</h2>
-          <p>A successful repair returns:</p>
-          <pre className="code-block">
-            <code>
-&#123;<br/>
-  <span className="code-key">"success"</span>: <span className="code-boolean">true</span>,<br/>
-  <span className="code-key">"repaired_json"</span>: &#123;<br/>
-    <span className="code-key">"unquoted_key"</span>: <span className="code-string">"value"</span><br/>
-  &#125;,<br/>
-  <span className="code-key">"normalized_json"</span>: <span className="code-string">"&#123;\n  \"unquoted_key\": \"value\"\n&#125;"</span>,<br/>
-  <span className="code-key">"errors"</span>: [<br/>
-    <span className="code-string">"Original JSON parsing failed: Unexpected token u in JSON at position 2"</span><br/>
-  ],<br/>
-  <span className="code-key">"changes"</span>: [<br/>
-    <span className="code-string">"Successfully repaired JSON syntax (e.g., quotes, trailing commas, missing brackets)."</span><br/>
-  ],<br/>
-  <span className="code-key">"plan"</span>: <span className="code-string">"free"</span>,<br/>
-  <span className="code-key">"remaining_requests"</span>: 99<br/>
-&#125;
-            </code>
-          </pre>
-        </section>
-      </div>
+      <footer className="card" style={{ textAlign: 'center', marginTop: '4rem' }}>
+        <h2>Get API Key</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          Need programmatic access? Generate a key via POST request.
+        </p>
+        <code className="code-block" style={{ display: 'inline-block', padding: '0.5rem 1rem' }}>
+          POST /api/v1/create-key
+        </code>
+        <p style={{ fontSize: '0.7rem', color: '#8b949e', marginTop: '1rem' }}>
+          Rate limited to 3 keys per IP per hour.
+        </p>
+      </footer>
     </main>
   );
 }
