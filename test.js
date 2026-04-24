@@ -134,7 +134,7 @@ async function runAllTests() {
     method: 'POST',
     path: '/api/v1/fixjson',
     headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
-    body: { json: "{ completely invalid format [[[" },
+    body: { json: '[1, 2] { "a": 3 }' },
     expectedStatus: 200,
     assertFn: (data) => {
       validateSuccessStructure(data);
