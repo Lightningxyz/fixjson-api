@@ -7,6 +7,25 @@ export default function Home() {
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [keyLoading, setKeyLoading] = useState(false);
+
+  const handleCreateKey = async () => {
+    setKeyLoading(true);
+    try {
+      const response = await fetch('/api/v1/create-key', { method: 'POST' });
+      const data = await response.json();
+      if (data.api_key) {
+        setGeneratedKey(data.api_key);
+      } else {
+        alert(data.error || 'Failed to generate key');
+      }
+    } catch (err) {
+      alert('Error generating key');
+    } finally {
+      setKeyLoading(false);
+    }
+  };
 
   const handleFix = async () => {
     if (!input.trim()) return;
@@ -129,12 +148,49 @@ export default function Home() {
         <p>
           Requests must include an <code>x-api-key</code> header. Usage is tracked and rate-limited.
         </p>
-        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Need a key? Generate one instantly:
+        
+        <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(88, 166, 255, 0.05)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Need a key?</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Generate a free API key instantly (limit 3 per hour).
+          </p>
+          
+          {!generatedKey ? (
+            <button 
+              className="copy-button" 
+              style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+              onClick={handleCreateKey}
+              disabled={keyLoading}
+            >
+              {keyLoading ? 'Generating...' : 'Generate API Key'}
+            </button>
+          ) : (
+            <div style={{ animation: 'fadeInDown 0.4s ease-out' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                YOUR NEW API KEY (SAVE THIS):
+              </p>
+              <code className="code-block" style={{ display: 'block', wordBreak: 'break-all', margin: '0 0 1rem 0' }}>
+                {generatedKey}
+              </code>
+              <button 
+                className="copy-button"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedKey);
+                  alert('Key copied!');
+                }}
+              >
+                Copy Key
+              </button>
+            </div>
+          )}
+        </div>
+
+        <p style={{ marginTop: '2rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          Or use the terminal:
         </p>
         <pre className="code-block">
           <code>
-<span className="code-comment"># Generate your own API key</span><br/>
+<span className="code-comment"># Generate via CLI</span><br/>
 curl -X POST https://fixjson-api.vercel.app/api/v1/create-key
           </code>
         </pre>
