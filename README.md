@@ -17,7 +17,7 @@ A lightweight API to repair malformed JSON and return clean, normalized output.
 curl -X POST https://api.yourdomain.com/api/v1/fixjson \
   -H "Content-Type: application/json" \
   -H "x-api-key: your_api_key_here" \
-  -d '{"json": "{ name: '"'"'John'"'"', age: 30, }"}'
+  -d '{"json": "{ name: \"John\", age: 30, }"}'
 ```
 
 ## API Reference

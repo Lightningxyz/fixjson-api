@@ -15,6 +15,9 @@ export default function Home() {
           Send us your broken JSON (trailing commas, missing quotes, single quotes), and we'll return a valid JSON object. 
           The API is entirely deterministic and does not use LLMs, ensuring lightning-fast and predictable results.
         </p>
+        <p style={{ marginTop: '1rem' }}>
+          <strong>Base URL:</strong> <code>https://fixjson-api.vercel.app</code>
+        </p>
       </section>
 
       <section className="card">
@@ -24,11 +27,11 @@ export default function Home() {
         </p>
         <pre className="code-block">
           <code>
-<span className="code-comment"># Example cURL request</span><br/>
-curl -X POST https://api.yourdomain.com/api/v1/fixjson \<br/>
+<span className="code-comment"># Try it (copy & run)</span><br/>
+curl -X POST https://fixjson-api.vercel.app/api/v1/fixjson \<br/>
   -H <span className="code-string">"Content-Type: application/json"</span> \<br/>
   -H <span className="code-string">"x-api-key: your_api_key_here"</span> \<br/>
-  -d <span className="code-string">'&#123;"json": "&#123; name: \'John\', age: 30, &#125;"&#125;'</span>
+  -d <span className="code-string">'&#123;"json": "&#123; name: \"John\", age: 30, &#125;"&#125;'</span>
           </code>
         </pre>
       </section>
