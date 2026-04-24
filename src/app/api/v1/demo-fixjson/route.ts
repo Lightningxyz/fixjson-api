@@ -13,7 +13,7 @@ function cleanupExpired() {
 
 export async function GET(req: NextRequest) {
   const forwarded = req.headers.get('x-forwarded-for');
-  const ip = forwarded?.split(',')[0]?.trim() || req.ip || '127.0.0.1';
+  const ip = forwarded?.split(',')[0]?.trim() || (req as any).ip || '127.0.0.1';
   const now = Date.now();
 
   cleanupExpired();
