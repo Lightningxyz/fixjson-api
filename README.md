@@ -1,6 +1,10 @@
 # fixjson API
+> A high-performance, deterministic engine for repairing malformed JSON structures without unpredictable LLM hallucinations.
 
 A lightweight API to repair malformed JSON and return clean, normalized output.
+
+## Base URL
+https://fixjson-api.vercel.app
 
 ## Features
 
@@ -13,8 +17,11 @@ A lightweight API to repair malformed JSON and return clean, normalized output.
 
 ## Quick Start
 
+Replace "your_api_key_here" with your actual API key.
+
+**Try it (copy & run)**
 ```bash
-curl -X POST https://api.yourdomain.com/api/v1/fixjson \
+curl -X POST https://fixjson-api.vercel.app/api/v1/fixjson \
   -H "Content-Type: application/json" \
   -H "x-api-key: your_api_key_here" \
   -d '{"json": "{ name: \"John\", age: 30, }"}'
@@ -53,6 +60,23 @@ curl -X POST https://api.yourdomain.com/api/v1/fixjson \
   ],
   "plan": "free",
   "remaining_requests": 99
+}
+```
+
+**Failed Repair Response (200 OK):**
+*(When JSON is too malformed to repair)*
+```json
+{
+  "success": false,
+  "repaired_json": null,
+  "normalized_json": null,
+  "errors": [
+    "Original JSON parsing failed: Unexpected character",
+    "Repair failed: Cannot resolve nested array structure"
+  ],
+  "changes": [],
+  "plan": "free",
+  "remaining_requests": 98
 }
 ```
 
@@ -101,3 +125,7 @@ npm install
 ```bash
 npm run dev
 ```
+
+## OpenAPI Spec
+
+A complete OpenAPI 3.0 specification (`openapi.yaml`) is included in the root of this repository. You can use it to instantly generate clients, import into Postman, or integrate with other standard API tooling.
