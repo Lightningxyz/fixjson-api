@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
     const authResult = await verifyAndLogRequest(apiKey, '/api/v1/fixjson');
 
     if (!authResult?.success) {
+      if (authResult?.error === 'Internal Server Error') {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
+
       const isRateLimit = authResult?.error === 'Rate limit exceeded';
       const status = isRateLimit ? 429 : 401;
       const errorMessage = isRateLimit 
@@ -51,11 +55,11 @@ export async function POST(req: NextRequest) {
     const { json: inputString } = parseResult.data;
     const repairResult = repairJson(inputString);
 
-    // 4. Return response
+    // 5. Return response
     return NextResponse.json({
       ...repairResult,
       plan: authResult.plan || 'free',
-      remaining_requests: authResult.remaining
+      remaining_requests: Number(authResult.remaining_requests)
     });
   } catch (error: any) {
     console.error('API Error:', error?.message || 'Unknown error');
