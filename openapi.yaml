@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: fixjson API
+  description: A lightweight API to repair malformed JSON and return clean, normalized output.
+  version: 1.0.0
+servers:
+  - url: https://fixjson-api.vercel.app
+paths:
+  /api/v1/fixjson:
+    post:
+      summary: Repair malformed JSON
+      description: Accepts a malformed JSON string and returns a repaired, normalized JSON object.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: x-api-key
+          in: header
+          description: API key for authentication and rate limiting
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RepairRequest'
+            example:
+              json: "{ name: 'John', age: 30, }"
+      responses:
+        '200':
+          description: Successfully repaired JSON
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepairResponse'
+              example:
+                success: true
+                repaired_json:
+                  name: John
+                  age: 30
+                normalized_json: "{\n  \"name\": \"John\",\n  \"age\": 30\n}"
+                errors:
+                  - Original JSON parsing failed
+                changes:
+                  - Removed trailing comma(s)
+                plan: free
+                remaining_requests: 99
+        '400':
+          description: Bad Request (Invalid payload structure or size limit exceeded)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Invalid JSON payload
+        '401':
+          description: Unauthorized (Missing or invalid API key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Missing x-api-key header
+        '429':
+          description: Too Many Requests (Rate limit exhausted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Free tier limit exceeded. Upgrade coming soon.
+                plan: free
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Internal server error
+  /api/health:
+    get:
+      summary: Health Check
+      description: Returns the health status of the API.
+      responses:
+        '200':
+          description: API is operational
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+              example:
+                status: ok
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    RepairRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - json
+      properties:
+        json:
+          type: string
+          description: The malformed JSON string to be repaired
+    RepairResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - changes
+        - plan
+        - remaining_requests
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the repair was successful
+        repaired_json:
+          type: object
+          description: The repaired JSON object
+          additionalProperties: true
+          nullable: true
+        normalized_json:
+          type: string
+          description: The repaired JSON string formatted with 2-space indentation
+          nullable: true
+        errors:
+          type: array
+          description: List of parsing errors detected in the original string
+          items:
+            type: string
+        changes:
+          type: array
+          description: List of repairs applied to the JSON
+          items:
+            type: string
+        plan:
+          type: string
+          description: The user's active billing plan
+        remaining_requests:
+          type: integer
+          minimum: 0
+          description: Number of requests remaining in the current billing cycle
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: A clear error message describing the issue
+        plan:
+          type: string
+          description: The user's active billing plan (if applicable)
